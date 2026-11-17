@@ -97,7 +97,7 @@ p{margin:0}
 /* ---------- Hero ---------- */
 .hero{padding:40px 0 88px}
 .hero-grid{display:grid;grid-template-columns:5fr 7fr;gap:56px;align-items:center}
-.hero h1{font-size:clamp(58px,8.2vw,118px);font-weight:900;line-height:.86;letter-spacing:-.01em}
+.hero h1{font-size:clamp(84px,8.2vw,118px);font-weight:900;line-height:.86;letter-spacing:-.01em}
 .hero h1 span{display:block}
 .hero .lede{margin-top:26px}
 .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
@@ -106,7 +106,7 @@ p{margin:0}
 .hero-facts b{display:block;font:800 26px/1 var(--display);color:var(--navy);margin-bottom:6px}
 
 /* The whiteboard: a half rink, red line on the left, end boards on the right */
-.board{position:relative;background:var(--white);border:3px solid var(--navy);border-radius:0 var(--r-rink) var(--r-rink) 0;box-shadow:12px 12px 0 var(--navy);overflow:hidden}
+.board{margin:0;position:relative;background:var(--white);border:3px solid var(--navy);border-radius:0 var(--r-rink) var(--r-rink) 0;box-shadow:12px 12px 0 var(--navy);overflow:hidden}
 .board svg{width:100%;height:auto}
 .board figcaption{position:absolute;left:18px;bottom:14px;font-size:13px;color:var(--muted)}
 .rink-mark{fill:none;stroke:var(--paint);stroke-width:2}
@@ -372,6 +372,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);bo
   .nav .btn{display:none}
 }
 
+/* Phone refinements */
+@media (max-width:600px){
+  .hero{padding:24px 0 64px}
+  .hero-grid{gap:36px}
+  .chalk{font-size:30px;stroke-width:9px}
+  .chalk.small{font-size:25px}
+  .board{margin-right:8px}
+  .summary.is-empty{display:none}
+  .summary dl > div.unset{display:none}
+  .summary .note{display:none}
+  .summary{padding:22px}
+  .summary h3{font-size:26px;margin-bottom:10px}
+  .foot-cols a{display:inline-block;padding:6px 0}
+  .addr a{display:inline-block;padding:8px 0}
+  .step h3{font-size:34px}
+  .done-head h3{font-size:36px!important}
+  .done-head .puck{width:46px;height:46px}
+}
 /* Toast */
 .toast{visibility:hidden;white-space:nowrap;position:fixed;left:50%;bottom:24px;transform:translate(-50%,140%);background:var(--navy);color:#fff;padding:14px 22px;border-radius:999px;font-weight:600;z-index:60;transition:transform .3s}
 .toast.show{visibility:visible;transform:translate(-50%,0)}
@@ -465,7 +483,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);bo
         <!-- coach notes -->
         <text x="168" y="418" class="chalk small pop" style="--t:1.7s">crossovers, stay low</text>
         <text x="352" y="160" class="chalk small pop" style="--t:2.45s" transform="rotate(52 352 160)">pass</text>
-        <text x="404" y="236" class="chalk pop" style="--t:3.2s">shoot in stride</text>
+        <text x="392" y="226" class="chalk pop" style="--t:3.2s">shoot in stride</text>
       </svg>
     </figure>
   </div>
@@ -930,7 +948,7 @@ function fmtTime(hm){let [h,m]=hm.split(":").map(Number);const ap=h>=12?"pm":"am
 function fmtTimeRange(s){return `${fmtTime(s.start)} to ${fmtTime(s.end)}`}
 function fmtDay(s,opts={weekday:"long",month:"short",day:"numeric"}){return parseYmd(s).toLocaleDateString("en-US",opts)}
 function esc(t){return String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2600)}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1800)}
 document.getElementById("yr").textContent=new Date().getFullYear();
 
 /* =====================================================================
@@ -1175,6 +1193,7 @@ function validate(step){
 
 /* ---------- Navigation ---------- */
 function goTo(n,{focus=true}={}){
+  $("#toast").classList.remove("show");
   S.step=n; S.maxStep=Math.max(S.maxStep,n);
   $$(".step").forEach(s=>s.classList.toggle("active",+s.dataset.step===n));
   $("#backBtn").style.visibility = n===1 ? "hidden" : "visible";
@@ -1185,8 +1204,9 @@ function goTo(n,{focus=true}={}){
   $("#stepAnnounce").textContent=`Step ${n} of 6: ${STEPS[n-1]}`;
   if(focus){
     const h=$(`.step[data-step="${n}"] h3`); h?.focus({preventScroll:true});
-    const top=$("#stepper").getBoundingClientRect().top+scrollY-100;
-    if(Math.abs(scrollY-top)>200) scrollTo({top,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+    const headH=$(".site-head").offsetHeight;
+    const top=$("#stepper").getBoundingClientRect().top+scrollY-headH-12;
+    if(Math.abs(scrollY-top)>8) scrollTo({top,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
   }
 }
 $("#nextBtn").addEventListener("click",()=>{ if(validate(S.step)) goTo(S.step+1) });
@@ -1221,7 +1241,8 @@ function renderSummary(){
     ...(S.backup?[["Backup", slotLabel(S.backup)]]:[]),
     ["Where", "StarCenter Northlake"],
   ];
-  $("#summary").innerHTML=rows.map(([k,v])=>`<div><dt>${k}</dt><dd class="${v?"":"empty"}">${v?esc(v):"Not chosen yet"}</dd></div>`).join("");
+  $("#summary").innerHTML=rows.map(([k,v])=>`<div class="${v?"":"unset"}"><dt>${k}</dt><dd class="${v?"":"empty"}">${v?esc(v):"Not chosen yet"}</dd></div>`).join("");
+  $(".summary").classList.toggle("is-empty", !S.lessonType && !S.playerFirst && !S.skills.length && !S.slot && !S.noneWork);
 }
 function renderReview(){
   const contact = S.bookingFor==="child" ? `${S.contactName} (parent/guardian)` : "";
@@ -1275,7 +1296,7 @@ form.addEventListener("submit",async e=>{
     $("#doneContact").textContent=`He'll ${S.contactPref==="Email"?`email ${S.email}`:S.contactPref==="Call"?`call ${S.phone}`:`text ${S.phone}`} to lock in ${S.noneWork?"a time that fits":slotLabel(S.slot)}.`;
     $("#donePay").textContent=`${S.payment} details come with the confirmation. Nothing has been charged.`;
     $("#reqId").textContent=`Request ID: ${res.id}`;
-    $("#done").classList.add("show"); $("#done").focus(); $(".summary .note").textContent="Sent. Blake has these details.";
+    $("#done").classList.add("show"); $("#done").focus({preventScroll:true}); scrollTo({top:$("#done").getBoundingClientRect().top+scrollY-$(".site-head").offsetHeight-24}); $(".summary .note").textContent="Sent. Blake has these details.";
     toast("Request sent");
     try{localStorage.removeItem(CONFIG.draftKey)}catch(e){}
   }catch(err){
